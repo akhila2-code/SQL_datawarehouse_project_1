@@ -1,4 +1,11 @@
---Quality check for crm_cust_table
+--Quality check for bronze.crm_cust_table
+select cst_id ,
+count(*)
+from bronze.crm_cust_info
+group by cst_id
+HAVING Count(*) >1 or cst_id is null;
+
+-----Quality check for silver.crm_cust_table
 select cst_id ,
 count(*)
 from bronze.crm_cust_info
