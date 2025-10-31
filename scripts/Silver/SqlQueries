@@ -85,3 +85,98 @@ cast(lead(prd_start_dt) over (partition by prd_key order by prd_start_dt)-1 as D
 FROM bronze.crm_prd_info
 
 select * from silver.crm_prd_info
+
+
+
+-----Fix crm_sales_details
+select sls_ord_num,sls_prod_key,sls_cust_id,
+case
+when sls_order_dt=0 or len(sls_order_dt) !=8 then null
+else
+cast(cast(sls_order_dt as varchar) as DATE) 
+END AS sls_order_dt,
+case
+when sls_ship_dt=0 or len(sls_ship_dt) !=8 then null
+else
+cast(cast(sls_ship_dt as varchar) as DATE) 
+END AS sls_ship_dt,
+case
+when sls_due_dt=0 or len(sls_due_dt) !=8 then null
+else
+cast(cast(sls_due_dt as varchar) as DATE) 
+END AS sls_due_dt,
+case
+when sls_sales is null or sls_sales<=0 or sls_sales!= sls_quatity* abs(sls_price)
+then sls_quatity* abs(sls_price)
+else sls_sales
+end as sls_sales,
+case 
+when sls_price is null or sls_price<=0 or sls_price != sls_sales /sls_quatity
+then sls_sales /sls_quatity
+else sls_price
+end as sls_price,
+sls_quatity
+from bronze.crm_sales_detalis
+
+---dropping and inserting values into in the silver table
+IF OBJECT_ID('silver.crm_sales_details','U')is not null
+drop table silver.crm_sales_detalis;
+
+GO
+
+CREATE TABLE silver.crm_sales_details(
+sls_ord_num nvarchar(50),
+sls_prod_key nvarchar(50),
+sls_cust_id int,
+sls_order_dt date,
+sls_ship_dt date,
+sls_due_dt date,
+sls_sales int,
+sls_quatity int,
+sls_price int,
+dwh_create_date DATETIME2 DEFAULT GETDATE()
+);
+INSERT INTO silver.crm_sales_details(
+sls_ord_num ,
+sls_prod_key ,
+sls_cust_id ,
+sls_order_dt ,
+sls_ship_dt ,
+sls_due_dt ,
+sls_sales ,
+sls_quatity ,
+sls_price
+)
+select sls_ord_num,sls_prod_key,sls_cust_id,
+case
+when sls_order_dt=0 or len(sls_order_dt) !=8 then null
+else
+cast(cast(sls_order_dt as varchar) as DATE) 
+END AS sls_order_dt,
+case
+when sls_ship_dt=0 or len(sls_ship_dt) !=8 then null
+else
+cast(cast(sls_ship_dt as varchar) as DATE) 
+END AS sls_ship_dt,
+case
+when sls_due_dt=0 or len(sls_due_dt) !=8 then null
+else
+cast(cast(sls_due_dt as varchar) as DATE) 
+END AS sls_due_dt,
+case
+when sls_sales is null or sls_sales<=0 or sls_sales!= sls_quatity* abs(sls_price)
+then sls_quatity* abs(sls_price)
+else sls_sales
+end as sls_sales,
+case 
+when sls_price is null or sls_price<=0 or sls_price != sls_sales /sls_quatity
+then sls_sales /sls_quatity
+else sls_price
+end as sls_price,
+sls_quatity
+from bronze.crm_sales_detalis
+
+select * from silver.crm_sales_details
+
+
+
